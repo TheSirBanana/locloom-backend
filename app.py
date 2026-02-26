@@ -16,7 +16,7 @@ AZURE_KEY = "44GKW9ZznKnVSXDgZLZfgaHAakBOWgy94XH0IYcYWVhlfvU9S7ORJQQJ99CBACBsN54
 
 # SUPABASE (Prends ces infos dans Settings > API de ton projet Supabase)
 SUPABASE_URL = "https://cwbcyvqcmbmmddngratp.supabase.co"
-SUPABASE_KEY = sb_publishable_RLeTqdxeiKPD3A_JoSkH8g_az4OjJ8a
+SUPABASE_KEY = "sb_publishable_RLeTqdxeiKPD3A_JoSkH8g_az4OjJ8a"
 
 # Initialisation des clients
 azure_client = DocumentAnalysisClient(AZURE_ENDPOINT, AzureKeyCredential(AZURE_KEY))
@@ -95,4 +95,5 @@ def scan_facture():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
