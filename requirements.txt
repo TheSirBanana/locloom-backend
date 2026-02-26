@@ -2,3 +2,4 @@ flask
 flask-cors
 azure-ai-formrecognizer
 gunicorn
+supabase
