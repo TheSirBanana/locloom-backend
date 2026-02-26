@@ -15,8 +15,8 @@ AZURE_ENDPOINT = "https://locloom-ocr-cerveau.cognitiveservices.azure.com/"
 AZURE_KEY = "44GKW9ZznKnVSXDgZLZfgaHAakBOWgy94XH0IYcYWVhlfvU9S7ORJQQJ99CBACBsN54XJ3w3AAALACOGa33E"
 
 # SUPABASE (Prends ces infos dans Settings > API de ton projet Supabase)
-SUPABASE_URL = "TON_URL_SUPABASE"
-SUPABASE_KEY = "TA_CLE_ANON_SUPABASE"
+SUPABASE_URL = "https://cwbcyvqcmbmmddngratp.supabase.co"
+SUPABASE_KEY = sb_publishable_RLeTqdxeiKPD3A_JoSkH8g_az4OjJ8a
 
 # Initialisation des clients
 azure_client = DocumentAnalysisClient(AZURE_ENDPOINT, AzureKeyCredential(AZURE_KEY))
@@ -95,3 +95,4 @@ def scan_facture():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
