@@ -10,38 +10,31 @@ CORS(app)
 AZURE_ENDPOINT = "https://locloom-ocr-cerveau.cognitiveservices.azure.com/"
 AZURE_KEY = "44GKW9ZznKnVSXDgZLZfgaHAakBOWgy94XH0IYcYWVhlfvU9S7ORJQQJ99CBACBsN54XJ3w3AAALACOGa33E"
 
-client = DocumentAnalysisClient(
-    endpoint=AZURE_ENDPOINT, 
-    credential=AzureKeyCredential(AZURE_KEY)
-)
+client = DocumentAnalysisClient(AZURE_ENDPOINT, AzureKeyCredential(AZURE_KEY))
 
 @app.route('/api/scan', methods=['POST'])
 def scan_facture():
-    if 'image' not in request.files:
-        return jsonify({"erreur": "Aucune image trouvee"}), 400
-        
-    file = request.files['image']
-    temp_path = "temp_receipt.jpg"
-    file.save(temp_path)
+    data = request.json
+    image_url = data.get("imageUrl") # Wix va nous envoyer un lien
+
+    if not image_url:
+        return jsonify({"erreur": "Lien d'image manquant"}), 400
     
     try:
-        with open(temp_path, "rb") as f:
-            poller = client.begin_analyze_document("prebuilt-receipt", document=f)
-        
+        # Azure peut lire directement depuis une URL !
+        poller = client.begin_analyze_document_from_url("prebuilt-receipt", image_url)
         receipts = poller.result()
         
         if not receipts.documents:
-            os.remove(temp_path)
-            return jsonify({"erreur": "Aucune facture reconnue"}), 400
+            return jsonify({"erreur": "Aucune facture trouvee"}), 400
             
         receipt = receipts.documents[0]
-        
         marchand = receipt.fields.get("MerchantName")
         date = receipt.fields.get("TransactionDate")
         grand_total = receipt.fields.get("Total")
-        
         valeur_total = grand_total.value if grand_total else 0.0
         
+        # Logique des taxes QC
         somme_taxes_azure = 0.0
         tax_details = receipt.fields.get("TaxDetails")
         if tax_details and tax_details.value:
@@ -50,37 +43,20 @@ def scan_facture():
                 if amount_field and amount_field.value:
                     somme_taxes_azure += amount_field.value.amount
 
-        tps_finale = 0.0
-        tvq_finale = 0.0
+        tps = round(somme_taxes_azure * (5.0 / 14.975), 2) if somme_taxes_azure > 0 else round((valeur_total / 1.14975) * 0.05, 2)
+        tvq = round(somme_taxes_azure * (9.975 / 14.975), 2) if somme_taxes_azure > 0 else round((valeur_total / 1.14975) * 0.09975, 2)
 
-        if somme_taxes_azure > 0:
-            tps_finale = round(somme_taxes_azure * (5.0 / 14.975), 2)
-            tvq_finale = round(somme_taxes_azure * (9.975 / 14.975), 2)
-        elif valeur_total > 0:
-            sous_total = valeur_total / 1.14975
-            tps_finale = round(sous_total * 0.05, 2)
-            tvq_finale = round(sous_total * 0.09975, 2)
-
-        resultat = {
+        return jsonify({
             "statut": "succes",
-            "marchand": marchand.value if marchand else "Non trouve",
-            "date": str(date.value) if date else "Non trouvee",
-            "tps": tps_finale,
-            "tvq": tvq_finale,
-            "total_taxes": round(tps_finale + tvq_finale, 2),
+            "marchand": marchand.value if marchand else "Inconnu",
+            "date": str(date.value) if date else "Inconnue",
+            "tps": tps,
+            "tvq": tvq,
             "grand_total": valeur_total
-        }
-        
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-            
-        return jsonify(resultat), 200
+        }), 200
 
     except Exception as e:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
         return jsonify({"erreur": str(e)}), 500
 
 if __name__ == '__main__':
-    print("Serveur API LocLoom demarre sur le port 5000...")
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
