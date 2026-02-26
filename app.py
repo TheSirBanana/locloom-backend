@@ -5,18 +5,19 @@ from supabase import create_client, Client
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.formrecognizer import DocumentAnalysisClient
 
-# 1. Initialisation de l'application (C'est ça qui te manquait !)
+# 1. Initialisation de l'application
 app = Flask(__name__)
 CORS(app)
 
-# 2. Configuration Supabase (Remets tes vraies clés ici)
-SUPABASE_URL = "METS_TON_URL_SUPABASE_ICI"
-SUPABASE_KEY = "METS_TA_CLE_PUBLISHABLE_ICI"
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# AZURE
+AZURE_ENDPOINT = "https://locloom-ocr-cerveau.cognitiveservices.azure.com/"
+AZURE_KEY = "44GKW9ZznKnVSXDgZLZfgaHAakBOWgy94XH0IYcYWVhlfvU9S7ORJQQJ99CBACBsN54XJ3w3AAALACOGa33E"
 
-# 3. Configuration Azure (Remets tes vraies clés ici)
-AZURE_ENDPOINT = "METS_TON_ENDPOINT_AZURE_ICI"
-AZURE_KEY = "METS_TA_CLE_AZURE_ICI"
+# SUPABASE
+SUPABASE_URL = "https://cwbcyvqcmbmmddngratp.supabase.co"
+SUPABASE_KEY = "sb_publishable_RLeTqdxeiKPD3A_JoSkH8g_az4OjJ8a"
+
+# Initialisation du client Azure
 document_analysis_client = DocumentAnalysisClient(
     endpoint=AZURE_ENDPOINT, credential=AzureKeyCredential(AZURE_KEY)
 )
