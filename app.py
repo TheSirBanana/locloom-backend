@@ -17,12 +17,14 @@ AZURE_KEY = "44GKW9ZznKnVSXDgZLZfgaHAakBOWgy94XH0IYcYWVhlfvU9S7ORJQQJ99CBACBsN54
 SUPABASE_URL = "https://cwbcyvqcmbmmddngratp.supabase.co"
 SUPABASE_KEY = "sb_publishable_RLeTqdxeiKPD3A_JoSkH8g_az4OjJ8a"
 
-# Initialisation du client Azure
+# 2. Initialisation des clients (C'est la ligne Supabase qui te manquait !)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 document_analysis_client = DocumentAnalysisClient(
     endpoint=AZURE_ENDPOINT, credential=AzureKeyCredential(AZURE_KEY)
 )
 
-# 4. La route principale pour scanner
+# 3. La route principale pour scanner
 @app.route('/api/scan', methods=['POST'])
 def scan_invoice():
     data = request.json
@@ -77,6 +79,6 @@ def scan_invoice():
     except Exception as e:
         return jsonify({"statut": "erreur", "erreur": str(e)}), 500
 
-# 5. Démarrage du serveur
+# 4. Démarrage du serveur
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
