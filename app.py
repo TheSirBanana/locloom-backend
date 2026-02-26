@@ -1,30 +1,57 @@
+import os
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from supabase import create_client, Client
+from azure.core.credentials import AzureKeyCredential
+from azure.ai.formrecognizer import DocumentAnalysisClient
+
+# 1. Initialisation de l'application (C'est ça qui te manquait !)
+app = Flask(__name__)
+CORS(app)
+
+# 2. Configuration Supabase (Remets tes vraies clés ici)
+SUPABASE_URL = "METS_TON_URL_SUPABASE_ICI"
+SUPABASE_KEY = "METS_TA_CLE_PUBLISHABLE_ICI"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# 3. Configuration Azure (Remets tes vraies clés ici)
+AZURE_ENDPOINT = "METS_TON_ENDPOINT_AZURE_ICI"
+AZURE_KEY = "METS_TA_CLE_AZURE_ICI"
+document_analysis_client = DocumentAnalysisClient(
+    endpoint=AZURE_ENDPOINT, credential=AzureKeyCredential(AZURE_KEY)
+)
+
+# 4. La route principale pour scanner
 @app.route('/api/scan', methods=['POST'])
 def scan_invoice():
     data = request.json
     image_url = data.get("imageUrl")
     
-    # NOUVEAU : On attrape les infos du menu déroulant de Wix
+    # On attrape les infos du menu déroulant de Wix
     categorie = data.get("categorie", "Entretien") 
     immeuble_id = data.get("immeubleId", "Sans adresse")
-    porte = data.get("porte", "Bâtiment complet") # NOUVEAU : La fameuse porte !
+    porte = data.get("porte", "Bâtiment complet")
 
     if not image_url:
         return jsonify({"statut": "erreur", "erreur": "URL manquante"}), 400
 
     try:
-        # Analyse Azure (Ton code ne change pas ici)
+        # Analyse Azure
         poller = document_analysis_client.begin_analyze_document_from_url("prebuilt-invoice", image_url)
         result = poller.result()
 
         invoice = result.documents[0]
         marchand = invoice.fields.get("VendorName").value if invoice.fields.get("VendorName") else "Inconnu"
-        total = invoice.fields.get("InvoiceTotal").value.amount if invoice.fields.get("InvoiceTotal") else 0.0
+        
+        # Gestion sécuritaire du total
+        total_field = invoice.fields.get("InvoiceTotal")
+        total = total_field.value.amount if total_field else 0.0
 
-        # Calcul des taxes
+        # Calcul des taxes (Québec)
         tps = total * 0.04348 if total > 0 else 0
         tvq = total * 0.08675 if total > 0 else 0
 
-        # NOUVEAU : On ajoute la catégorie, l'immeuble et la porte pour Supabase
+        # Enregistrement dans Supabase
         transaction_data = {
             "marchand": marchand,
             "total_brut": total,
@@ -48,3 +75,7 @@ def scan_invoice():
 
     except Exception as e:
         return jsonify({"statut": "erreur", "erreur": str(e)}), 500
+
+# 5. Démarrage du serveur
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
